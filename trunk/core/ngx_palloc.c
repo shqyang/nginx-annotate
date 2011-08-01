@@ -12,18 +12,22 @@ static void *ngx_palloc_block(ngx_pool_t *pool, size_t size);
 static void *ngx_palloc_large(ngx_pool_t *pool, size_t size);
 
 
-ngx_pool_t *
-ngx_create_pool(size_t size, ngx_log_t *log)
+
+/**
+*   创建内存池
+*/
+ngx_pool_t* ngx_create_pool(size_t size, ngx_log_t *log)
 {
     ngx_pool_t  *p;
 
-    p = ngx_memalign(NGX_POOL_ALIGNMENT, size, log);
-    if (p == NULL) {
+    p = ngx_memalign(NGX_POOL_ALIGNMENT, size, log);    // 分配内存
+    if (p == NULL)      // 分配内存失败
+    {
         return NULL;
     }
 
-    p->d.last = (u_char *) p + sizeof(ngx_pool_t);
-    p->d.end = (u_char *) p + size;
+    p->d.last = (u_char *)p + sizeof(ngx_pool_t);
+    p->d.end = (u_char *)p + size;
     p->d.next = NULL;
     p->d.failed = 0;
 
@@ -142,28 +146,39 @@ ngx_palloc(ngx_pool_t *pool, size_t size)
 }
 
 
-void *
-ngx_pnalloc(ngx_pool_t *pool, size_t size)
+
+/**
+*   函数名: ngx_pnalloc
+*   功能:   分配内存
+*   参数:   
+            [in]pool: 内存池
+            [in]size: 欲分配的内存块的大小
+*   返回值:
+*/
+void* ngx_pnalloc(ngx_pool_t *pool, size_t size)
 {
     u_char      *m;
     ngx_pool_t  *p;
 
-    if (size <= pool->max) {
+    if (size <= pool->max)      // 判断内存分配请求是否是从内存池中分配
+    {
 
         p = pool->current;
 
-        do {
+        do 
+        {
             m = p->d.last;
 
-            if ((size_t) (p->d.end - m) >= size) {
+            if ((size_t)(p->d.end - m) >= size)     // 判断内存池中的空余空间能否满足此次分配大小
+            {
                 p->d.last = m + size;
 
                 return m;
             }
 
-            p = p->d.next;
+            p = p->d.next;      // 交给下一个内存池进行分配
 
-        } while (p);
+        } while(p);
 
         return ngx_palloc_block(pool, size);
     }
@@ -172,21 +187,24 @@ ngx_pnalloc(ngx_pool_t *pool, size_t size)
 }
 
 
-static void *
-ngx_palloc_block(ngx_pool_t *pool, size_t size)
+static void* ngx_palloc_block(ngx_pool_t *pool, size_t size)
 {
     u_char      *m;
     size_t       psize;
-    ngx_pool_t  *p, *new, *current;
+    
+    ngx_pool_t  *p;
+    ngx_pool_t  *new;
+    ngx_pool_t  *current;
 
-    psize = (size_t) (pool->d.end - (u_char *) pool);
+    psize = (size_t)(pool->d.end - (u_char *) pool);
 
     m = ngx_memalign(NGX_POOL_ALIGNMENT, psize, pool->log);
-    if (m == NULL) {
+    if (m == NULL) 
+    {
         return NULL;
     }
 
-    new = (ngx_pool_t *) m;
+    new = (ngx_pool_t *)m;
 
     new->d.end = m + psize;
     new->d.next = NULL;
@@ -198,8 +216,10 @@ ngx_palloc_block(ngx_pool_t *pool, size_t size)
 
     current = pool->current;
 
-    for (p = current; p->d.next; p = p->d.next) {
-        if (p->d.failed++ > 4) {
+    for (p = current; p->d.next != NULL; p = p->d.next) 
+    {
+        if (p->d.failed++ > 4) 
+        {
             current = p->d.next;
         }
     }
@@ -212,8 +232,7 @@ ngx_palloc_block(ngx_pool_t *pool, size_t size)
 }
 
 
-static void *
-ngx_palloc_large(ngx_pool_t *pool, size_t size)
+static void* ngx_palloc_large(ngx_pool_t *pool, size_t size)
 {
     void              *p;
     ngx_uint_t         n;
