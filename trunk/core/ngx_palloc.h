@@ -26,13 +26,15 @@
               NGX_POOL_ALIGNMENT)
 
 
+/* 资源释放函数指针 */
 typedef void (*ngx_pool_cleanup_pt)(void *data);
 
 typedef struct ngx_pool_cleanup_s  ngx_pool_cleanup_t;
 
-struct ngx_pool_cleanup_s {
-    ngx_pool_cleanup_pt   handler;
-    void                 *data;
+struct ngx_pool_cleanup_s 
+{
+    ngx_pool_cleanup_pt   handler;      /* 资源释放函数 */
+    void                 *data;         /* 传递给资源释放函数的参数 */
     ngx_pool_cleanup_t   *next;
 };
 
@@ -41,7 +43,7 @@ typedef struct ngx_pool_large_s  ngx_pool_large_t;
 
 struct ngx_pool_large_s {
     ngx_pool_large_t     *next;
-    void                 *alloc;
+    void                 *alloc;       /* 指向大块内存 */
 };
 
 
